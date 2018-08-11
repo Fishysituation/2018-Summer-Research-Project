@@ -36,7 +36,7 @@ class player:
         elif self.strategy == "random":
             return r.randint(0, 1)
         #short memory strategies - ecological
-        elif self. strategy == "TFT"
+        elif self. strategy == "TFT":
             return TFT(self, history)
         elif self.strategy == "PAV":
             return PAV(self, history)
@@ -46,7 +46,7 @@ class player:
             return grim(history)
         
         #for genetic/neural net player
-        elif self.strategy == "other"
+        elif self.strategy == "other":
             return custom
 
 
@@ -59,7 +59,7 @@ class player:
             return 0
         #else copy opponent's last move
         else:
-            return history[1][-1]:        
+            return history[1][-1]
 
     def PAV(self, history):
         #cooperate if first round
