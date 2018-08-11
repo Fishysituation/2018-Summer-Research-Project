@@ -65,8 +65,8 @@ class player:
         #cooperate if first round
         if len(history) < 1:
             return 0
-        #check if last round WON
-        elif history[0][-1] == and history[1][-1]:
+        #check if last round WON i.e. player def. opp. coop.
+        elif history[0][-1] == 1 and history[1][-1] == 0:
             #stick with same strategy
             return self.state
         #if lost or drew
@@ -88,7 +88,7 @@ class player:
             if self.state == 1:
                 return 1
             elif history[1][-1] == 1:
-                self.state = 1:
+                self.state = 1
                 return 1
             else:
                 return 0
