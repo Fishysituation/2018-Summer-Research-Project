@@ -26,8 +26,9 @@ class player:
 
     def __init__(self, strategy):
         self.strategy = strategy
-    
-    def move(self, history, custom):
+
+
+    def move(self, history = [], custom = None):
         #simple strategies - training net
         if self.strategy == "allC":
             return 0
@@ -37,14 +38,14 @@ class player:
             return r.randint(0, 1)
         #short memory strategies - ecological
         elif self. strategy == "TFT":
-            return TFT(self, history)
+            return self.TFT(history)
         elif self.strategy == "PAV":
-            return PAV(self, history)
+            return self.PAV(history)
 
         #other strategies
         elif self.strategy == "grim":
-            return grim(history)
-        
+            return self.grim(history)
+
         #for genetic/neural net player
         elif self.strategy == "other":
             return custom
@@ -53,9 +54,9 @@ class player:
     # for history in following strategies
     # 2D array, [[player], [opponent]]
 
-    def TFT(history):
+    def TFT(self, history):
         #cooperate if first round
-        if len(history) < 1:
+        if len(history[0]) < 1:
             return 0
         #else copy opponent's last move
         else:
@@ -63,7 +64,7 @@ class player:
 
     def PAV(self, history):
         #cooperate if first round
-        if len(history) < 1:
+        if len(history[0]) < 1:
             return 0
         #check if last round WON i.e. player def. opp. coop.
         elif history[0][-1] == 1 and history[1][-1] == 0:
@@ -81,7 +82,7 @@ class player:
 
     def grim(self, history):
         #cooperate first round
-        if len(hisotry) < 1:
+        if len(history[0]) < 1:
             return 0
         #yeet on them if they've yeeted on you
         else:
@@ -94,13 +95,18 @@ class player:
                 return 0
 
 
+
+
 # special player - ecological, genetic, net
 class adaptivePlayer(player):
 
     score = 0
 
     def __init__(self, strategy):
-        player.__init__(strategy)
+        super().__init__(strategy)
 
+
+    def payoff(self, playerMove, opponentMove):
+        self.score += payoffs[playerMove][opponentMove]
 
 
