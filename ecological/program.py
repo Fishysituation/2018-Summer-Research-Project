@@ -5,14 +5,14 @@ sys.path.append("..")
 import random as r
 import prisoner
 
-size = 10
-pathOut = "runs/run1.out"
+size = 200
+pathOut = "runs/run200."
 
 strategyNo = 5
 
 
 
-#populate grid with equal no of strategies
+# populate grid with equal no of strategies
 def generate():
     grid = []
     count = []
@@ -39,6 +39,7 @@ def generate():
     return grid
     
 
+# displays a grid state
 def display(grid):
     print("\n")
     for y in range(0, size):
@@ -49,8 +50,7 @@ def display(grid):
 
 
 
-
-#wraps board around in horzintal direction
+# wraps board around in horzintal direction
 def modX(num):
 	if num >= 0:
 		return num % size
@@ -58,7 +58,8 @@ def modX(num):
 	else:
 		return num + size
 
-#wraps board around in vertical direction
+
+# wraps board around in vertical direction
 def modY(num):
 	if num >= 0:
 		return num % size
@@ -106,9 +107,6 @@ def findStrength(x, y, grid):
     return player.score
 
 
-
-
-
 # increment the board one time step
 def increment(grid):
     #init blank return and strengths grid
@@ -127,25 +125,23 @@ def increment(grid):
         toReturn.append(line)
         strengths.append(strengthLine)
 
-
     #replace each grid with strongest of its neighbours
     #keep same strategy if tie
-    #display(strengths)
     for y in range(0, size):
         for x in range(0, size):
-            #default return as same strategy
-            toReturn[y][x] = grid[y][x]
+            maxS = strengths[y][x]
+            maxx, maxy = x, y 
             for j in range(y-1, y+2):
                 for i in range(x-1, x+2):
-                    if j == y and i == x:
-                        pass
-                    if strengths[modY(j)][modX(i)] > strengths[y][x]:
-                        strengths[y][x] = strengths[modY(j)][modX(i)]
-                        toReturn[y][x] = grid[modY(j)][modX(i)]
-    
+                    if strengths[modY(j)][modX(i)] > maxS:
+                        maxS = strengths[modY(j)][modX(i)]
+                        maxx, maxy = modX(i), modY(j)
+            toReturn[y][x] = grid[maxy][maxx]
     return toReturn
 
 
+
+# get percentages of each strategy
 def calculateOverall(grid):
     names = prisoner.strategies
     count = [0, 0, 0, 0, 0] 
@@ -154,13 +150,12 @@ def calculateOverall(grid):
         for x in range(0, size):
             count[grid[y][x]] += 1
 
-
     for i in range(0, 5):
         print(names[i] + ": " + str(int((count[i]/(size*size))*100)) + "%")
 
     return int((count[3]/(size*size))*100)
 
-
+# write a grid state out to file
 def writeOut(grid, f):
 
     for y in range(0, size):
@@ -172,30 +167,29 @@ def writeOut(grid, f):
     f.write("\n")
 
 
-
+# program entry point
 def Main():
 
-    grid = generate()
-    display(grid)
-    tftScore = calculateOverall(grid)
+    for i in range(0, 5):
 
-    f = open(pathOut, 'w')
-    writeOut(grid, f)
-
-    count = 1
-
-    #play n rounds
-    while tftScore < 80:
-        grid = increment(grid)
-        display(grid)
+        grid = generate()
         tftScore = calculateOverall(grid)
-        print("Round " + str(count))
-        
-        if count % 25 == 0:
-            writeOut(grid, f)
-        count += 1
 
-    f.close()
+        f = open(pathOut + str(i) + ".out", 'w')
+        writeOut(grid, f)
+
+        count = 1
+
+        #play n rounds
+        while tftScore < 90:
+            grid = increment(grid)
+            tftScore = calculateOverall(grid)
+            print("Round " + str(count))
+            
+            writeOut(grid, f)
+            count += 1
+
+        f.close()
         
 
 Main()
