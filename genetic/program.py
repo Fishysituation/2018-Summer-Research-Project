@@ -1,18 +1,23 @@
 import random as r
 
-populationSize = 20
-generationNo = 50
+populationSize = 500
+
+breedRate = 0.75
+mutationRate = 0.01
 
 #goal string, all lower case characters 97-122
 targetString = "thisisthetargetstring"
 strLen = len(targetString)
 
+#file path for data out
+pathOut = "geneticData.out"
 
 #class for an individual gene
 class individual:
 
     string = []
     fitness = 0
+    fitnessScaled = 0
 
     def __init__(self, initialString):
         for i in range(0, strLen):
@@ -25,8 +30,9 @@ class individual:
         for i in range(0, strLen):
             if self.string[i] == targetString[i]:
                 count += 1
-        self.fitness = count
-    
+        self.fitness = count/strLen
+        self.fitnessScaled = 2 ** self.fitness
+
     #displays individual as string, not list
     def displayString(self):
         for i in range(0, strLen):
@@ -34,10 +40,14 @@ class individual:
         print(' : ' + str(self.fitness), end = '')
         print()
 
-    #randomly changes character in string
-    def mutate(self):
-        index = r.randint(0, strLen-1)
-        self.string[index] = chr(r.randint(97, 122))
+    #probability is a function of its fitness
+    def tryMutate(self):
+        count = 0
+        for i in range(0, strLen):
+            if r.uniform(0, 1) <= mutationRate:
+                count += 1
+                self.string[i] = chr(r.randint(97, 122))
+        return(count)
 
     #allows sorting
     def __lt__(self, other):
@@ -76,46 +86,18 @@ def generate():
     return temp
 
 
-#display all members in population, in order fitness
-def displayAll(population):
-    for i in range(0, populationSize):
-        population[i].displayString()
-
-
-#calculate and display total and mean average
-def calculateOverall(population):
-    total = 0
-    for i in range(0, populationSize):
-        total += population[i].fitness
-    print("Total fitnes: " + str(total))
-    print("Average: " + str(total/populationSize) + "\n")
-
-
-#find all unique fitnesses and their frequency
-def getUniqueFitness(population):
-
-    scores = [[population[0].fitness, 1]]
-
-    for i in range(1, populationSize):
-        if population[i].fitness == scores[-1][0]:
-            scores[-1][1] += 1
-        else:
-            scores.append([population[i].fitness, 1])
-    return scores
-    
 
 #pick individual randomly with fitness bias
-def pickRandomBreeding(denominator, scores):
-    num = r.randint(1, denominator)
+def pickRandomBreeding(sumFitness, fitnesses):
+    num = r.uniform(1, sumFitness)
     #actual index to return
     count = -1
+    for i in range(0, populationSize):
+        count += 1
+        num -= fitnesses[i]
 
-    for i in range(0, len(scores)):
-        for n in range(0, scores[i][1]):
-            count += 1
-            num -= (len(scores) - i)
-            if num <= 0:
-                return count
+        if num <= 0:
+            return count
 
 
 #merge dna of two individuals
@@ -128,73 +110,92 @@ def cross(dna1, dna2, splitIndex):
     return new
     
 
-#breed two random picked members in population and breed
-def breed(population):
-    #unique fitnesses
-    scores = getUniqueFitness(population)
+#breed two random picked members in population
+def breed(population, newGeneration):
 
-    #calculate denominator for breeding
-    denominator = 0
-    for i in range(0, len(scores)):
-        denominator += (len(scores)-i)*scores[i][1]
+    #sum all scaled fitnesses
+    fitnesses = []
+    sumFitness = 0
+    for i in range(0, populationSize):
+        sumFitness += population[i].fitnessScaled
+        fitnesses.append(population[i].fitnessScaled)
 
     #pick two unique indicies
-    index1 = pickRandomBreeding(denominator, scores)
-    index2 = pickRandomBreeding(denominator, scores)
+    index1 = pickRandomBreeding(sumFitness, fitnesses)
+    index2 = pickRandomBreeding(sumFitness, fitnesses)
 
     while index1 == index2:
-        index2 = pickRandomBreeding(denominator, scores)
+        index2 = pickRandomBreeding(sumFitness, fitnesses)
 
+    #optionally breed a breedRate proportion of times 
+    if r.uniform(0, 1) <= breedRate:
+
+        splitIndex = r.randint(1, strLen-2)
+
+        #create new dna by crossing and copy to each individual
+        new1 = individual(cross(population[index1].string, population[index2].string, splitIndex))
+        new2 = individual(cross(population[index2].string, population[index1].string, splitIndex))
+
+        #try mutating
+        new1.tryMutate()
+        new2.tryMutate()
+        #calculate fitness
+        new1.calculateFitness()
+        new2.calculateFitness()
+        #add to new generation
+        newGeneration.append(new1)
+        newGeneration.append(new2)
+
+    else:
+        #add to new generation
+        newGeneration.append(population[index1])
+        newGeneration.append(population[index2])
+        #try mutating
+        newGeneration[-1].tryMutate()
+        newGeneration[-2].tryMutate()
+        #calculate fitness
+        newGeneration[-1].calculateFitness()
+        newGeneration[-2].calculateFitness()
+
+
+
+#calculate and display total and mean average
+def calculateOverall(population):
+    total = 0
+    highest = population[0].fitness
+    highestIndex = 0
+    lowest = population[0].fitness
+    for i in range(0, populationSize):
+        total += population[i].fitness
+        if population[i].fitness > highest:
+            highest = population[i].fitness
+            highestIndex = i
+        elif population[i].fitness < lowest:
+            lowest = population[i].fitness
+    print("Total fittness: " + str(total))
+    print("Fittest member: ", end = '')
+    population[highestIndex].displayString()
+    print("Average: " + str(total/populationSize) + "\n")
     
-    splitIndex = r.randint(1, strLen-2)
-
-    print("\nCrossing " + str(index1) + ", " + str(index2) + " at index " + str(splitIndex) + ":")
-    population[index1].displayString()
-    population[index2].displayString()
-    print()
-    
-    #create new dna by crossing and copy to each individual
-    new1 = cross(population[index1].string, population[index2].string, splitIndex)
-    new2 = cross(population[index2].string, population[index1].string, splitIndex)
-
-    population[index1].string = new1
-    population[index2].string = new2
-
-    #update fitnesses and display result
-    population[index1].calculateFitness()
-    population[index2].calculateFitness()
-
-    print("Result:")
-    population[index1].displayString()
-    population[index2].displayString()
-    print()
-
-    #update position of individuals in population
-    reorder(population)
+    return [lowest, highest, total/populationSize]
 
 
 
-#reorder population by fitness
-#you tried to implement something more efficient but failed f
-def reorder(population):
-    population.sort(reverse = True)
+#display all members in population, in order fitness
+def displayAll(population):
+    for i in range(0, populationSize):
+        population[i].displayString()
 
 
-
-
-#mutate one character in member in population
-def mutate(population):
-    num = r.randint(0, populationSize-1)
-    print("Mutating index " + str(num))
-    print("Old string: ", end = '')
-    population[num].displayString()
-    population[num].mutate()
-    population[num].calculateFitness()
-    print("New string: ", end = '')
-    population[num].displayString()
-    reorder(population)
-    print()
-
+#write all data out to file
+def writeOut(allData):
+    f = open(pathOut, 'w')
+    for i in range(0, len(allData)):
+        f.write(
+            str(allData[i][0]) + "\t" + 
+            str(allData[i][1]) + "\t" + 
+            str(allData[i][2]) + "\n"
+        )
 
 
 #main function
@@ -205,16 +206,33 @@ def Main():
     #generate initial population
     population = generate()
 
-    for i in range(0, generationNo):
-        #breed two individuals
-        breed(population)
-        #mutate one individual
-        mutate(population)
+    allData = []
+    generationNo = 0
+    highest = 0
 
-        calculateOverall(population)
-        displayAll(population)
+    while int(highest) != 1:
+        generationNo += 1
+        #initialise new generaton
+        newGeneration = []
+        
+        #while newGeneration not yet full
+        while len(newGeneration) < populationSize:
+            breed(population, newGeneration)
+        
+        population = newGeneration
+
+        print("Generation " + str(generationNo))
+        #display all information
+        newData = calculateOverall(population)
+        
+        highest = newData[1]
+        allData.append(newData)
         
         print()
+
+
+    print("String was found in " + str(generationNo) + " generations.")
+    writeOut(allData)
 
 
 Main()
