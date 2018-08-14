@@ -10,7 +10,7 @@ targetString = "targetstring"
 strLen = len(targetString)
 
 #file path for data out
-pathOut = "geneticData1000.out"
+pathOut = "data/geneticData1000.out"
 
 
 #class for an individual gene
@@ -68,7 +68,7 @@ def generate():
 
     for i in range(0, populationSize):
         toReturn.append(individual(generateString()))
-        
+
     return toReturn
 
 
