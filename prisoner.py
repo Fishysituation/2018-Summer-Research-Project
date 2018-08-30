@@ -15,7 +15,7 @@ payoffs = [
 
 
 strategies = ["allC", "allD", "random", "TFT", "PAV", "grim"]
-
+netStrategies = ["allD", "TFT", "grim", "CCD", "DDC"]
 
 # base player class - to train net
 class player:
@@ -45,7 +45,11 @@ class player:
         #other strategies
         elif self.strategy == "grim":
             return self.grim(history)
-
+        elif self.strategy == "CCD":
+            return self.CCD()
+        elif self.strategy == "DDC":
+            return self.DDC()
+        
         #for genetic/neural net player
         elif self.strategy == "other":
             return custom
@@ -94,8 +98,25 @@ class player:
             else:
                 return 0
 
+    def CCD(self):
+        if self.state == 0:
+            return 0
+        elif self.state == 1:
+            return 0
+        elif self.state == 2:
+            self.state = 0
+            return 1
 
 
+    def DDC(self):
+        if self.state == 0:
+            return 1
+        elif self.state == 1:
+            return 1
+        elif self.state == 2:
+            self.state = 0
+            return 0
+            
 
 # special player - ecological, genetic, net
 class adaptivePlayer(player):
@@ -108,5 +129,6 @@ class adaptivePlayer(player):
 
     def payoff(self, playerMove, opponentMove):
         self.score += payoffs[playerMove][opponentMove]
+        return payoffs[playerMove][opponentMove]
 
-
+    
