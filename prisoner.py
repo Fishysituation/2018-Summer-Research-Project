@@ -15,6 +15,7 @@ payoffs = [
 
 
 strategies = ["allC", "allD", "random", "TFT", "PAV", "grim"]
+qStrategies = ["allD", "TFT", "DDC"]
 netStrategies = ["allD", "TFT", "grim", "CCD", "DDC"]
 
 # base player class - to train net
